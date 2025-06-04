@@ -1,0 +1,9 @@
+pytest
+pynance
+yfinance
+pyfolio
+wordcloud
+scikit-learn
+seaborn 
+vaderSentiment
+#TA-Lib

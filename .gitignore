@@ -1,0 +1,10 @@
+data/
+.env
+envX/
+env/
+venv/
+
+*.py
+*.ipynb
+exp.ipynb
+!*/__init__.py
