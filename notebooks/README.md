@@ -1,25 +1,44 @@
-# 📓 Notebooks: Financial News EDA & Technical Analysis
+# 📓 Notebooks: Financial News EDA, Technical Analysis & Correlation Study
 
 This folder contains Jupyter Notebooks for:
-- **Task 1:** Exploratory Data Analysis (EDA) of financial news data
-- **Task 2:** Technical analysis of stock price data using Python
 
-## Contents
-- `task_1_financial_news_data_eda.ipynb`: EDA, text analysis, and sentiment analysis on financial news headlines.
-- `task_2_technical_analysis.ipynb`: Calculation and visualization of technical indicators (SMA, RSI, MACD) and performance metrics for stocks.
-
-## How to Use
-1. Ensure all dependencies in the main `requirements.txt` are installed.
-2. Place the required data files in the `../data/` directory as referenced in the notebooks.
-3. Open and run each notebook cell sequentially for reproducible results.
-
-## Key Features
-- Clean, modular code using utility classes from the `src/` directory
-- Visualizations for both news data and stock indicators
-- Ready for extension to new datasets or additional analysis
+* **Task 1:** Exploratory Data Analysis (EDA) of financial news data
+* **Task 2:** Technical analysis of stock price data using Python
+* **Task 3:** Correlation analysis between daily news sentiment and stock price movements
 
 ---
-## Requirements
-- Python 3.10+
-- See `requirements.txt` for all dependencies
-- Jupyter Notebook or JupyterLab for running the notebooks
+
+## 📁 Contents
+
+* `task_1_financial_news_data_eda.ipynb`: EDA, text cleaning, and sentiment scoring of financial news headlines.
+* `task_2_technical_analysis.ipynb`: Calculation and visualization of technical indicators (SMA, RSI, MACD) and stock performance metrics.
+* `task_3_sentiment_vs_stock_returns.ipynb`: Correlates aggregated daily news sentiment with stock daily returns (AAPL).
+
+---
+
+## 🛠️ How to Use
+
+1. Install dependencies listed in the root `requirements.txt`.
+2. Place required CSV data files in the `../data/` directory as expected by the notebooks.
+3. Launch Jupyter Notebook or JupyterLab and run each notebook sequentially for reproducible results.
+
+---
+
+## ⭐ Key Features
+
+* Clean, modular code using object-oriented utilities from the `src/` directory
+* Sentiment analysis using VADER on financial headlines
+* Technical indicator visualizations with performance metrics
+* Correlation plots and statistical analysis linking sentiment and stock returns
+* Easily extensible to additional stocks or datasets
+
+---
+
+## 📦 Requirements
+
+* Python 3.10+
+* See `requirements.txt` for all Python package dependencies
+* Jupyter Notebook or JupyterLab for interactive exploration
+
+---
+

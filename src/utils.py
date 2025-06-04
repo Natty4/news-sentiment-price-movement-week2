@@ -1,8 +1,12 @@
+import re
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import numpy as np
+
 from collections import Counter
-import re
+    
+from scipy.stats import pearsonr
 
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.decomposition import NMF
@@ -154,9 +158,6 @@ class FinancialNewsEDA:
         print("Missing values:\n", self.df.isna().sum())
         
 
-
-
-
 class TechnicalIndicatorPlotter:
     """
     Task-2: Visualization of Stock Technical Indicators
@@ -217,5 +218,184 @@ class TechnicalIndicatorPlotter:
         plt.xlabel("Date")
         plt.ylabel("Cumulative Return")
         plt.legend()
+        plt.tight_layout()
+        plt.show()
+
+
+class FinancialNewsCorrelation:
+
+    def preprocess_stock_data(df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Validate and preprocess stock data to compute daily returns.
+        
+        Parameters:
+            df (pd.DataFrame): Must contain 'Date' as index or column and 'Close' price.
+        
+        Returns:
+            pd.DataFrame: DataFrame with 'date' and 'daily_return' columns.
+        """
+        try:
+            if 'Date' in df.columns:
+                df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
+                df.dropna(subset=['Date'], inplace=True)
+                df.set_index('Date', inplace=True)
+            elif not isinstance(df.index, pd.DatetimeIndex):
+                raise ValueError("Stock DataFrame must have a datetime index or 'Date' column.")
+
+            if 'Close' not in df.columns:
+                raise KeyError("Missing 'Close' column in stock data.")
+
+            df = df.sort_index()
+            df['daily_return'] = df['Close'].pct_change()
+            df.dropna(subset=['daily_return'], inplace=True)
+
+            df.reset_index(inplace=True)
+            df.rename(columns={'Date': 'date'}, inplace=True)
+
+            return df[['date', 'daily_return']]
+
+        except Exception as e:
+            print(f"[ERROR] Stock preprocessing failed: {e}")
+            return pd.DataFrame()
+        
+    def aggregate_daily_sentiment(df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Aggregate average daily sentiment from news headlines.
+
+        Parameters:
+            df (pd.DataFrame): DataFrame containing 'date' (datetime) and 'sentiment' columns.
+
+        Returns:
+            pd.DataFrame: DataFrame with 'date' and 'avg_sentiment' columns.
+        """
+        try:
+            if 'date' not in df.columns or 'sentiment' not in df.columns:
+                raise KeyError("The DataFrame must contain 'date' and 'sentiment' columns.")
+            
+            df = df.copy()
+            df['date'] = pd.to_datetime(df['date']).dt.date  # Remove time component
+            sentiment_daily = df.groupby('date')['sentiment'].mean().reset_index()
+            sentiment_daily.rename(columns={'sentiment': 'avg_sentiment'}, inplace=True)
+            sentiment_daily['date'] = pd.to_datetime(sentiment_daily['date'])  # Normalize back to datetime
+            
+            return sentiment_daily
+
+        except Exception as e:
+            print(f"[ERROR] Sentiment aggregation failed: {e}")
+            return pd.DataFrame()
+
+
+    def merge_sentiment_with_returns(sentiment_df: pd.DataFrame, stock_returns_df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Merge average daily sentiment scores with daily stock returns.
+
+        Parameters:
+            sentiment_df (pd.DataFrame): DataFrame with 'date' and 'avg_sentiment'.
+            stock_returns_df (pd.DataFrame): DataFrame with 'date' and 'daily_return'.
+
+        Returns:
+            pd.DataFrame: Merged DataFrame with columns ['date', 'avg_sentiment', 'daily_return'].
+        """
+        try:
+            required_sent_cols = {'date', 'avg_sentiment'}
+            required_stock_cols = {'date', 'daily_return'}
+
+            if not required_sent_cols.issubset(sentiment_df.columns):
+                raise KeyError(f"Sentiment DataFrame must contain columns: {required_sent_cols}")
+            if not required_stock_cols.issubset(stock_returns_df.columns):
+                raise KeyError(f"Stock returns DataFrame must contain columns: {required_stock_cols}")
+
+            sentiment_df = sentiment_df.copy()
+            stock_returns_df = stock_returns_df.copy()
+
+            merged_df = pd.merge(sentiment_df, stock_returns_df, on='date', how='inner')
+
+            if merged_df.empty:
+                print("[WARNING] No overlapping dates found between sentiment and stock returns.")
+            else:
+                print(f"[INFO] Successfully merged {len(merged_df)} records on common dates.")
+
+            return merged_df.dropna()
+
+        except Exception as e:
+            print(f"[ERROR] Merging failed: {e}")
+            return pd.DataFrame()
+        
+
+    def compute_sentiment_return_correlation(merged_df: pd.DataFrame) -> dict:
+        """
+        Compute Pearson correlation between average sentiment and stock returns.
+
+        Parameters:
+            merged_df (pd.DataFrame): DataFrame containing 'avg_sentiment' and 'daily_return' columns.
+
+        Returns:
+            dict: Dictionary with 'correlation', 'p_value', and optional message.
+        """
+        try:
+            if merged_df.empty:
+                raise ValueError("Input DataFrame is empty. Cannot compute correlation.")
+
+            if 'avg_sentiment' not in merged_df.columns or 'daily_return' not in merged_df.columns:
+                raise KeyError("Merged DataFrame must contain 'avg_sentiment' and 'daily_return' columns.")
+
+            x = merged_df['avg_sentiment']
+            y = merged_df['daily_return']
+
+            # Drop NaNs
+            valid_data = merged_df.dropna(subset=['avg_sentiment', 'daily_return'])
+            if len(valid_data) < 2:
+                raise ValueError("Not enough valid data points to compute correlation.")
+
+            correlation, p_value = pearsonr(valid_data['avg_sentiment'], valid_data['daily_return'])
+
+            result = {
+                "correlation": round(correlation, 4),
+                "p_value": round(p_value, 4),
+                "significant": p_value < 0.05
+            }
+
+            msg = f"[INFO] Correlation: {result['correlation']}, p-value: {result['p_value']} "
+            msg += "(Statistically significant)" if result['significant'] else "(Not statistically significant)"
+            print(msg)
+
+            return result
+
+        except Exception as e:
+            print(f"[ERROR] Correlation analysis failed: {e}")
+            return {"correlation": None, "p_value": None, "significant": None}
+        
+        
+    def compute_daily_returns(df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Compute daily percentage returns from 'Adj Close' column.
+
+        Parameters:
+        - df (pd.DataFrame): DataFrame with 'Adj Close' and 'date' column or index.
+
+        Returns:
+        - pd.DataFrame: With 'daily_return' column
+        """
+        df = df.copy()
+        df["daily_return"] = df["Adj Close"].pct_change()
+        return df.dropna(subset=["daily_return"])
+
+
+    def plot_sentiment_vs_returns(df: pd.DataFrame, sentiment_col: str, return_col: str, title: str = ""):
+        """
+        Create a scatter plot with regression line between sentiment and returns.
+
+        Parameters:
+        - df (pd.DataFrame): DataFrame containing sentiment and return columns
+        - sentiment_col (str): Column name for sentiment score
+        - return_col (str): Column name for daily return
+        - title (str): Plot title
+        """
+        plt.figure(figsize=(10, 6))
+        sns.regplot(data=df, x=sentiment_col, y=return_col, scatter_kws={'alpha':0.5}, line_kws={'color':'red'})
+        plt.xlabel("Average Sentiment")
+        plt.ylabel("Daily Return")
+        plt.title(title or "Sentiment vs. Daily Return")
+        plt.grid(True)
         plt.tight_layout()
         plt.show()
