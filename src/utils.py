@@ -152,3 +152,70 @@ class FinancialNewsEDA:
         print("Total unique publishers:", self.df["publisher"].nunique())
         print("Time range:", self.df["date"].min(), "to", self.df["date"].max())
         print("Missing values:\n", self.df.isna().sum())
+        
+
+
+
+
+class TechnicalIndicatorPlotter:
+    """
+    Task-2: Visualization of Stock Technical Indicators
+    """
+    def __init__(self, df: pd.DataFrame, ticker: str):
+        self.df = df
+        self.ticker = ticker
+
+    def plot_price_and_indicators(self):
+        """
+        Plot Close Price + SMAs, RSI, and MACD in subplots.
+        """
+        try:
+            plt.figure(figsize=(16, 10))
+
+            self._plot_price_with_smas()
+            self._plot_rsi()
+            self._plot_macd()
+
+            plt.tight_layout()
+            plt.show()
+
+        except Exception as e:
+            print(f"[ERROR] Plotting failed: {e}")
+
+    def _plot_price_with_smas(self):
+        plt.subplot(3, 1, 1)
+        plt.plot(self.df.index, self.df['Close'], label='Close', color='black')
+        plt.plot(self.df.index, self.df['SMA_20'], label='SMA 20', color='blue')
+        plt.plot(self.df.index, self.df['SMA_50'], label='SMA 50', color='orange')
+        plt.title(f'{self.ticker} - Close Price & Moving Averages')
+        plt.legend()
+
+    def _plot_rsi(self):
+        plt.subplot(3, 1, 2)
+        plt.plot(self.df.index, self.df['RSI_14'], label='RSI 14', color='green')
+        plt.axhline(70, color='red', linestyle='--')
+        plt.axhline(30, color='red', linestyle='--')
+        plt.title('Relative Strength Index (RSI)')
+        plt.legend()
+
+    def _plot_macd(self):
+        plt.subplot(3, 1, 3)
+        plt.plot(self.df.index, self.df['MACD'], label='MACD', color='purple')
+        plt.plot(self.df.index, self.df['MACD_Signal'], label='Signal Line', color='gray')
+        plt.bar(self.df.index, self.df['MACD_Hist'], label='Histogram', color='lightcoral')
+        plt.title('MACD')
+        plt.legend()
+        
+    
+    def plot_cumulative_returns(cumulative_returns: pd.Series, stock_name: str = "Stock"):
+        """
+        Plots cumulative returns.
+        """
+        plt.figure(figsize=(14, 5))
+        plt.plot(cumulative_returns, label="Cumulative Returns", color="green")
+        plt.title(f"{stock_name} Cumulative Returns Over Time")
+        plt.xlabel("Date")
+        plt.ylabel("Cumulative Return")
+        plt.legend()
+        plt.tight_layout()
+        plt.show()
